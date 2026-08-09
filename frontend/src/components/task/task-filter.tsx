@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -17,6 +17,9 @@ const defaultValue: Record<StatusType, boolean> = {
   inactive: false,
 }
 
+const selectedStatuses = (filter: Record<StatusType, boolean>): StatusType[] =>
+  (Object.keys(filter) as StatusType[]).filter((k) => filter[k])
+
 export function TaskFilter({
   handleFilter,
 }: {
@@ -25,30 +28,15 @@ export function TaskFilter({
   const [activeFilter, setActiveFilter] =
     useState<Record<StatusType, boolean>>(defaultValue)
 
-  const activeFilterLength = useMemo(
-    () =>
-      Object.entries(activeFilter)
-        .filter(([_, status]) => status)
-        .map(([value, _]) => value as StatusType).length,
-    [activeFilter],
-  )
-
-  const isAll = useMemo(
-    () =>
-      activeFilterLength === 0 ||
-      activeFilterLength === Object.values(activeFilter).length,
-    [activeFilterLength, activeFilter],
-  )
+  const selected = selectedStatuses(activeFilter)
+  const isAll =
+    selected.length === 0 ||
+    selected.length === Object.keys(activeFilter).length
 
   const handleToggle = (key: StatusType) => {
-    setActiveFilter((prev) => ({ ...prev, [key]: !prev[key] }))
-    const filters = Object.entries({
-      ...activeFilter,
-      [key]: !activeFilter[key],
-    })
-      .filter(([_, status]) => status)
-      .map(([value, _]) => value as StatusType)
-    handleFilter(filters)
+    const next = { ...activeFilter, [key]: !activeFilter[key] }
+    setActiveFilter(next)
+    handleFilter(selectedStatuses(next))
   }
 
   const clearFilters = () => {
@@ -60,8 +48,7 @@ export function TaskFilter({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline">
-          <IconFilter />{' '}
-          {activeFilterLength > 0 && <span>{activeFilterLength}</span>}
+          <IconFilter /> {selected.length > 0 && <span>{selected.length}</span>}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-40">
