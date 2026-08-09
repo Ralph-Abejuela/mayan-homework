@@ -15,7 +15,11 @@ import { Input } from '../ui/input'
 import { IconEdit, IconTrash } from '@tabler/icons-react'
 import { TaskFilter } from './task-filter'
 import TaskForm from './task-form'
-import { deleteTask, getTaskQuery, updateTask } from '#/api/task.api'
+import { getTaskQuery, updateTask, type ApiError } from '#/api/task.api'
+import { toast } from 'sonner'
+import { Skeleton } from '../ui/skeleton'
+import DeleteTaskDialog from './delete-task-dialog'
+import TaskLoadingSkeleton from './loading-task-skeleton'
 
 const statusCycle: Record<StatusType, StatusType> = {
   inactive: 'active',
@@ -29,6 +33,7 @@ export default function TaskList() {
   const [statusFilter, setStatusFilter] = useState<StatusType[]>([])
   const [editTask, setEditTask] = useState<TaskSchema>()
   const [openFormDialog, setOpenFormDialog] = useState<boolean>(false)
+  const [deleteTarget, setDeleteTarget] = useState<TaskSchema | null>(null)
 
   const debounceSearch = useDebounce(search, 300)
   const { data = [], isLoading } = useQuery({
@@ -70,22 +75,15 @@ export default function TaskList() {
     setOpenFormDialog(true)
   }
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await deleteTask(id)
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: getTaskQuery().queryKey })
-    },
-  })
-
-  const handleDelete = (id: number) => {
-    deleteMutation.mutate(id)
-  }
-
   const cycleStatusMutation = useMutation({
     mutationFn: async (vals: { id: number; status: StatusType }) => {
       await updateTask(vals.id, { status: vals.status })
+    },
+    onSuccess: () => {
+      toast.success('Status updated')
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message)
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: getTaskQuery().queryKey })
@@ -98,7 +96,7 @@ export default function TaskList() {
   }
 
   if (isLoading) {
-    return <span>Loading...</span> // replace with skeleton
+    return <TaskLoadingSkeleton />
   }
 
   if (rawData.length === 0) {
@@ -144,6 +142,10 @@ export default function TaskList() {
                   <Button
                     variant={'outline'}
                     className="mr-4"
+                    disabled={
+                      cycleStatusMutation.isPending &&
+                      cycleStatusMutation.variables?.id === e.id
+                    }
                     onClick={() => handleCycleStatus(e.id, e.status)}
                   >
                     <StatusIcon />
@@ -159,7 +161,7 @@ export default function TaskList() {
                   <Button
                     variant={'destructive'}
                     size={'icon'}
-                    onClick={() => handleDelete(e.id)}
+                    onClick={() => setDeleteTarget(e)}
                   >
                     <IconTrash />
                   </Button>
@@ -169,6 +171,13 @@ export default function TaskList() {
           })
         )}
       </div>
+
+      <DeleteTaskDialog
+        task={deleteTarget}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null)
+        }}
+      />
 
       <TaskForm
         key={editTask?.id ?? 'new'}

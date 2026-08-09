@@ -31,6 +31,7 @@ import {
   updateTask,
   type ApiError,
 } from '#/api/task.api'
+import { toast } from 'sonner'
 
 const statusKeys = Object.keys(statusList) as [StatusType, ...StatusType[]]
 
@@ -74,16 +75,15 @@ export default function TaskForm({
     onSuccess: () => {
       // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      toast.success(isEdit ? 'Task updated' : 'Task created')
       reset()
       onOpenChange?.(false)
     },
     onError: (error: ApiError) => {
       if (error.error === 'Conflict') {
         setError('title', { message: error.message })
-      } else {
-        // Handle future errors.
-        console.error(error)
       }
+      toast.error(error.message)
     },
   })
 
@@ -187,8 +187,12 @@ export default function TaskForm({
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" form="task-form">
-              Save changes
+            <Button
+              type="submit"
+              form="task-form"
+              disabled={createTask.isPending}
+            >
+              {createTask.isPending ? 'Saving...' : 'Save changes'}
             </Button>
           </DialogFooter>
         </DialogContent>

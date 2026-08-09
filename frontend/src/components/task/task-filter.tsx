@@ -44,6 +44,16 @@ export function TaskFilter({
     handleFilter([])
   }
 
+  const toggleAll = () => {
+    const next = isAll
+      ? defaultValue
+      : (Object.fromEntries(
+          Object.keys(defaultValue).map((k) => [k, true]),
+        ) as Record<StatusType, boolean>)
+    setActiveFilter(next)
+    handleFilter(selectedStatuses(next))
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -54,10 +64,7 @@ export function TaskFilter({
       <DropdownMenuContent className="w-40">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Status Filter</DropdownMenuLabel>
-          <DropdownMenuCheckboxItem
-            checked={isAll}
-            onCheckedChange={clearFilters}
-          >
+          <DropdownMenuCheckboxItem checked={isAll} onCheckedChange={toggleAll}>
             All
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem
