@@ -15,6 +15,7 @@ import { Input } from '../ui/input'
 import { IconEdit, IconTrash } from '@tabler/icons-react'
 import { TaskFilter } from './task-filter'
 import TaskForm from './task-form'
+import { getTaskQuery } from '#/api/task.api'
 
 const statusCycle: Record<StatusType, string> = {
   inactive: 'active',
@@ -30,23 +31,24 @@ export default function TaskList() {
   const [openFormDialog, setOpenFormDialog] = useState<boolean>(false)
 
   const debounceSearch = useDebounce(search, 300)
-  const { data = [], isLoading } = useQuery<TaskSchema[]>({
-    queryKey: ['tasks'],
-    queryFn: async () => {
-      // hardcoding the server url for now. It should be in an env file
-      const result = await fetch('http://localhost:3001/task')
-      return await result.json()
-    },
+  const { data = [], isLoading } = useQuery({
+    ...getTaskQuery(),
     select: (response) => {
       const splitInput = debounceSearch.toLowerCase().split(' ')
-      const searchInput = Object.keys(statusCycle).includes(splitInput[-1])
-        ? splitInput.slice(0, -1).join('')
-        : splitInput.join('')
+      const lastWord = splitInput[splitInput.length - 1]
+
+      const isLastWordStatus = Object.keys(statusCycle).includes(lastWord)
+
+      const searchInput = isLastWordStatus
+        ? splitInput.slice(0, -1).join(' ')
+        : splitInput.join(' ')
+
       return response
         .filter(
           (res) =>
             // Search filters
-            res.title.toLowerCase().includes(searchInput) &&
+            res.title.toLowerCase().includes(searchInput.trim()) &&
+            (isLastWordStatus ? res.status === lastWord : true) &&
             // status filters
             (statusFilter.length === 0
               ? true
@@ -74,7 +76,7 @@ export default function TaskList() {
       await fetch(`http://localhost:3001/task/${id}`, { method: 'DELETE' })
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: getTaskQuery().queryKey })
     },
   })
 
@@ -93,7 +95,7 @@ export default function TaskList() {
       })
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: getTaskQuery().queryKey })
     },
   })
 
@@ -121,7 +123,7 @@ export default function TaskList() {
   }
 
   return (
-    <div className="grid grid-rows-[auto_1fr] gap-4">
+    <div className="grid grid-rows-[auto_1fr] gap-4 h-full">
       <div className="flex gap-2">
         <Input
           placeholder="Search..."
@@ -133,7 +135,7 @@ export default function TaskList() {
         <Button onClick={handleNew}>Create</Button>
         <TaskFilter handleFiter={setStatusFilter} />
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 h-full">
         {data.length === 0 ? (
           <div>No Tasks found.</div>
         ) : (

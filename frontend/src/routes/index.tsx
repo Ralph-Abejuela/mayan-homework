@@ -5,7 +5,7 @@ export const Route = createFileRoute('/')({ component: Home })
 
 function Home() {
   return (
-    <div className="p-8 grid grid-rows-[auto_1fr] justify-center">
+    <div className="p-8 grid grid-rows-[auto_1fr] justify-center h-svh">
       <h1 className="text-4xl font-bold py-6">
         Homework Project -{' '}
         <span className="font-light tracking-tight">Ralph Luis Abejuela</span>

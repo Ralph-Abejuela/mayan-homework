@@ -26,6 +26,7 @@ import { Input } from '../ui/input'
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group'
 import { Button } from '../ui/button'
 import { Textarea } from '../ui/textarea'
+import type { ApiError } from '#/api/task.api'
 
 const formSchema = z.object({
   title: z.string().min(1, 'title must not be empty.'),
@@ -47,24 +48,7 @@ export default function TaskForm({
   const queryClient = useQueryClient()
   const isEdit = task !== undefined
 
-  const createTask = useMutation({
-    mutationFn: async (e: formType) => {
-      const method = isEdit ? 'PATCH' : 'POST'
-      await fetch(`http://localhost:3001/task${isEdit ? `/${task?.id}` : ''}`, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(e),
-      })
-    },
-    onSuccess: () => {
-      // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: ['tasks'] })
-    },
-  })
-
-  const { handleSubmit, control } = useForm<formType>({
+  const { handleSubmit, control, setError } = useForm<formType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: task?.title ?? '',
@@ -73,9 +57,49 @@ export default function TaskForm({
     },
   })
 
+  const createTask = useMutation({
+    mutationFn: async (e: formType) => {
+      const method = isEdit ? 'PATCH' : 'POST'
+      const response = await fetch(
+        `http://localhost:3001/task${isEdit ? `/${task?.id}` : ''}`,
+        {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(e),
+        },
+      )
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}))
+        const error: ApiError = {
+          message:
+            errorBody.message ||
+            `Request failed with status ${response.status}`,
+          error: errorBody.error || 'UNKNOWN_ERROR',
+          statusCode: response.status,
+        }
+        throw error
+      }
+    },
+    onSuccess: () => {
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      console.log('success')
+      onOpenChange?.(false)
+    },
+    onError: (error: ApiError) => {
+      if (error.error === 'Conflict') {
+        setError('title', { message: error.message })
+      } else {
+        // Handle future errors.
+        console.error(error)
+      }
+    },
+  })
+
   const onSubmit = (e: formType) => {
     createTask.mutate(e)
-    onOpenChange?.(false)
   }
 
   return (
