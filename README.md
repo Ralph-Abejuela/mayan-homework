@@ -57,8 +57,8 @@ Build a Task Management App With the following features:
 
 ### Techstack
 
-- Next.js
-  - Why: It provides a simple and structured setup making it easy for other developers to understand the architecture
+- Vite + React + Tanstack Router
+  - Why: It provides a simple and file based structure where it provides the best developer experience and fast prototyping.
 - Tanstack Query
   - Why: This is the standard for querying API endpoints as it handles alot of the necessary features of a fetch requests such as caching and invalidation
 - Zod
