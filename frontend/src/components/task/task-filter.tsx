@@ -40,13 +40,13 @@ export function TaskFilter({
   }
 
   const clearFilters = () => {
-    setActiveFilter(defaultValue)
+    setActiveFilter({ ...defaultValue })
     handleFilter([])
   }
 
   const toggleAll = () => {
     const next = isAll
-      ? defaultValue
+      ? { ...defaultValue }
       : (Object.fromEntries(
           Object.keys(defaultValue).map((k) => [k, true]),
         ) as Record<StatusType, boolean>)

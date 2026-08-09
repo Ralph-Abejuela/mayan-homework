@@ -28,6 +28,7 @@ import { Button } from '../ui/button'
 import { Textarea } from '../ui/textarea'
 import {
   createTask as createTaskApi,
+  getTaskQuery,
   updateTask,
   type ApiError,
 } from '#/api/task.api'
@@ -74,7 +75,7 @@ export default function TaskForm({
     },
     onSuccess: () => {
       // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: getTaskQuery().queryKey })
       toast.success(isEdit ? 'Task updated' : 'Task created')
       reset()
       onOpenChange?.(false)
@@ -157,7 +158,11 @@ export default function TaskForm({
                       className="grid grid-cols-3"
                     >
                       {Object.entries(statusList).map(([key, value]) => (
-                        <FieldLabel key={key} htmlFor={`${key}-status`}>
+                        <FieldLabel
+                          key={key}
+                          htmlFor={`${key}-status`}
+                          className="cursor-pointer focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+                        >
                           <Field orientation={'horizontal'}>
                             <FieldContent>
                               <value.Icon />
@@ -167,7 +172,7 @@ export default function TaskForm({
                               value={key}
                               id={`${key}-status`}
                               aria-invalid={fieldState.invalid}
-                              className="hidden"
+                              className="sr-only"
                             />
                           </Field>
                         </FieldLabel>

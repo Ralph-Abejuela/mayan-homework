@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { statusList, type StatusType, type TaskSchema } from './task'
+import {
+  statusCycle,
+  statusList,
+  type StatusType,
+  type TaskSchema,
+} from './task'
 import { useState } from 'react'
 import { useDebounce } from '#/hooks/useDebounce'
 import EmptyTask from './empty-task'
@@ -12,20 +17,13 @@ import {
 } from '../ui/item'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import { IconEdit, IconTrash } from '@tabler/icons-react'
+import { IconEdit, IconQuestionMark, IconTrash } from '@tabler/icons-react'
 import { TaskFilter } from './task-filter'
 import TaskForm from './task-form'
 import { getTaskQuery, updateTask, type ApiError } from '#/api/task.api'
 import { toast } from 'sonner'
-import { Skeleton } from '../ui/skeleton'
 import DeleteTaskDialog from './delete-task-dialog'
 import TaskLoadingSkeleton from './loading-task-skeleton'
-
-const statusCycle: Record<StatusType, StatusType> = {
-  inactive: 'active',
-  active: 'completed',
-  completed: 'inactive',
-}
 
 export default function TaskList() {
   const queryClient = useQueryClient()
@@ -36,7 +34,12 @@ export default function TaskList() {
   const [deleteTarget, setDeleteTarget] = useState<TaskSchema | null>(null)
 
   const debounceSearch = useDebounce(search, 300)
-  const { data = [], isLoading } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     ...getTaskQuery(),
     select: (response) => {
       const splitInput = debounceSearch.toLowerCase().split(' ')
@@ -63,7 +66,8 @@ export default function TaskList() {
     },
   })
 
-  const rawData = queryClient.getQueryData<TaskSchema[]>(['tasks']) || []
+  const rawData =
+    queryClient.getQueryData<TaskSchema[]>(getTaskQuery().queryKey) || []
 
   const handleEdit = (task: TaskSchema) => {
     setEditTask(task)
@@ -99,6 +103,17 @@ export default function TaskList() {
     return <TaskLoadingSkeleton />
   }
 
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 h-full">
+        <p className="text-muted-foreground">Failed to load tasks.</p>
+        <Button variant="outline" onClick={() => refetch()}>
+          Retry
+        </Button>
+      </div>
+    )
+  }
+
   if (rawData.length === 0) {
     return (
       <>
@@ -130,8 +145,10 @@ export default function TaskList() {
           <div>No Tasks found.</div>
         ) : (
           data.map((e) => {
-            const statusTitle = statusList[e.status].title
-            const StatusIcon = statusList[e.status].Icon
+            // ponytail: server data may drift from StatusType — guard the lookup
+            const statusMeta = statusList[e.status]
+            const statusTitle = statusMeta?.title ?? 'Unknown Title'
+            const StatusIcon = statusMeta?.Icon ?? IconQuestionMark
             return (
               <Item key={e.id} variant={'outline'}>
                 <ItemContent>

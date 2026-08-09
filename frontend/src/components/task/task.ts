@@ -23,3 +23,9 @@ export interface TaskSchema {
   description: string
   status: StatusType
 }
+
+export const statusCycle: Record<StatusType, StatusType> = {
+  inactive: 'active',
+  active: 'completed',
+  completed: 'inactive',
+}
