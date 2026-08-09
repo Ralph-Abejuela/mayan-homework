@@ -20,7 +20,6 @@ export class TaskController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createTaskDto: CreateTaskDto) {
-    console.log(createTaskDto);
     return this.taskService.create(createTaskDto);
   }
 
