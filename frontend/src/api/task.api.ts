@@ -8,7 +8,7 @@ export interface ApiError {
 }
 
 export const SERVER_URL =
-  import.meta.env.VITE_SERVER_URL ?? 'http://localhost:30021'
+  import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3001'
 
 async function getTasksList() {
   const result = await fetch(SERVER_URL + '/task')
