@@ -19,7 +19,7 @@ import {
 } from '../ui/field'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { statusList, type TaskSchema } from './task'
+import { statusList, type StatusType, type TaskSchema } from './task'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Label } from '../ui/label'
 import { Input } from '../ui/input'
@@ -32,10 +32,12 @@ import {
   type ApiError,
 } from '#/api/task.api'
 
+const statusKeys = Object.keys(statusList) as [StatusType, ...StatusType[]]
+
 const formSchema = z.object({
   title: z.string().min(1, 'title must not be empty.'),
   description: z.string().catch(''),
-  status: z.string().optional(),
+  status: z.enum(statusKeys).optional(),
 })
 
 type formType = z.infer<typeof formSchema>

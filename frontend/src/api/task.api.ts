@@ -1,4 +1,4 @@
-import type { TaskSchema } from '#/components/task/task'
+import type { StatusType, TaskSchema } from '#/components/task/task'
 import { queryOptions } from '@tanstack/react-query'
 
 export interface ApiError {
@@ -13,7 +13,7 @@ export const SERVER_URL =
 export interface TaskPayload {
   title: string
   description: string
-  status?: string
+  status?: StatusType
 }
 
 async function parseError(response: Response): Promise<ApiError> {

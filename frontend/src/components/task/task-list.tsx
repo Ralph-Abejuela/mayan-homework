@@ -17,7 +17,7 @@ import { TaskFilter } from './task-filter'
 import TaskForm from './task-form'
 import { deleteTask, getTaskQuery, updateTask } from '#/api/task.api'
 
-const statusCycle: Record<StatusType, string> = {
+const statusCycle: Record<StatusType, StatusType> = {
   inactive: 'active',
   active: 'completed',
   completed: 'inactive',
@@ -52,7 +52,7 @@ export default function TaskList() {
             // status filters
             (statusFilter.length === 0
               ? true
-              : statusFilter.includes(res.status as StatusType)),
+              : statusFilter.includes(res.status)),
         )
         .sort((a, b) => a.id - b.id)
     },
@@ -85,7 +85,7 @@ export default function TaskList() {
   }
 
   const cycleStatusMutation = useMutation({
-    mutationFn: async (vals: { id: number; status: string }) => {
+    mutationFn: async (vals: { id: number; status: StatusType }) => {
       await updateTask(vals.id, { status: vals.status })
     },
     onSettled: () => {
@@ -93,9 +93,8 @@ export default function TaskList() {
     },
   })
 
-  const handleCycleStatus = (id: number, status: string) => {
-    const newStatus =
-      statusCycle[status as keyof typeof statusCycle] ?? 'inactive'
+  const handleCycleStatus = (id: number, status: StatusType) => {
+    const newStatus = statusCycle[status] ?? 'inactive'
     cycleStatusMutation.mutate({ id, status: newStatus })
   }
 
@@ -134,8 +133,8 @@ export default function TaskList() {
           <div>No Tasks found.</div>
         ) : (
           data.map((e, key) => {
-            const statusTitle = statusList[e.status as StatusType].title
-            const StatusIcon = statusList[e.status as StatusType].Icon
+            const statusTitle = statusList[e.status].title
+            const StatusIcon = statusList[e.status].Icon
             return (
               <Item key={key} variant={'outline'}>
                 <ItemContent>
