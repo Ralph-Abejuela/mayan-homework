@@ -15,7 +15,7 @@ import { Input } from '../ui/input'
 import { IconEdit, IconTrash } from '@tabler/icons-react'
 import { TaskFilter } from './task-filter'
 import TaskForm from './task-form'
-import { getTaskQuery } from '#/api/task.api'
+import { deleteTask, getTaskQuery, updateTask } from '#/api/task.api'
 
 const statusCycle: Record<StatusType, string> = {
   inactive: 'active',
@@ -73,7 +73,7 @@ export default function TaskList() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await fetch(`http://localhost:3001/task/${id}`, { method: 'DELETE' })
+      await deleteTask(id)
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: getTaskQuery().queryKey })
@@ -86,13 +86,7 @@ export default function TaskList() {
 
   const cycleStatusMutation = useMutation({
     mutationFn: async (vals: { id: number; status: string }) => {
-      await fetch(`http://localhost:3001/task/${vals.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: vals.status }),
-      })
+      await updateTask(vals.id, { status: vals.status })
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: getTaskQuery().queryKey })

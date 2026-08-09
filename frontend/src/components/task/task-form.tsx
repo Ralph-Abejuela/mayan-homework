@@ -26,7 +26,11 @@ import { Input } from '../ui/input'
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group'
 import { Button } from '../ui/button'
 import { Textarea } from '../ui/textarea'
-import type { ApiError } from '#/api/task.api'
+import {
+  createTask as createTaskApi,
+  updateTask,
+  type ApiError,
+} from '#/api/task.api'
 
 const formSchema = z.object({
   title: z.string().min(1, 'title must not be empty.'),
@@ -59,27 +63,10 @@ export default function TaskForm({
 
   const createTask = useMutation({
     mutationFn: async (e: formType) => {
-      const method = isEdit ? 'PATCH' : 'POST'
-      const response = await fetch(
-        `http://localhost:3001/task${isEdit ? `/${task?.id}` : ''}`,
-        {
-          method: method,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(e),
-        },
-      )
-      if (!response.ok) {
-        const errorBody = await response.json().catch(() => ({}))
-        const error: ApiError = {
-          message:
-            errorBody.message ||
-            `Request failed with status ${response.status}`,
-          error: errorBody.error || 'UNKNOWN_ERROR',
-          statusCode: response.status,
-        }
-        throw error
+      if (isEdit && task) {
+        await updateTask(task.id, e)
+      } else {
+        await createTaskApi(e)
       }
     },
     onSuccess: () => {
