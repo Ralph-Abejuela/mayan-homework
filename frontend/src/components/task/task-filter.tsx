@@ -18,9 +18,9 @@ const defaultValue: Record<StatusType, boolean> = {
 }
 
 export function TaskFilter({
-  handleFiter,
+  handleFilter,
 }: {
-  handleFiter: (e: StatusType[]) => void
+  handleFilter: (e: StatusType[]) => void
 }) {
   const [activeFilter, setActiveFilter] =
     useState<Record<StatusType, boolean>>(defaultValue)
@@ -41,7 +41,6 @@ export function TaskFilter({
   )
 
   const handleToggle = (key: StatusType) => {
-    // console.log(activeFilter)
     setActiveFilter((prev) => ({ ...prev, [key]: !prev[key] }))
     const filters = Object.entries({
       ...activeFilter,
@@ -49,12 +48,12 @@ export function TaskFilter({
     })
       .filter(([_, status]) => status)
       .map(([value, _]) => value as StatusType)
-    handleFiter(filters)
+    handleFilter(filters)
   }
 
   const clearFilters = () => {
     setActiveFilter(defaultValue)
-    handleFiter([])
+    handleFilter([])
   }
 
   return (

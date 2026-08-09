@@ -66,7 +66,6 @@ export default function TaskList() {
   }
 
   const handleNew = () => {
-    console.log('newww')
     setEditTask(undefined)
     setOpenFormDialog(true)
   }
@@ -126,17 +125,17 @@ export default function TaskList() {
           }}
         />
         <Button onClick={handleNew}>Create</Button>
-        <TaskFilter handleFiter={setStatusFilter} />
+        <TaskFilter handleFilter={setStatusFilter} />
       </div>
       <div className="flex flex-col gap-2 h-full">
         {data.length === 0 ? (
           <div>No Tasks found.</div>
         ) : (
-          data.map((e, key) => {
+          data.map((e) => {
             const statusTitle = statusList[e.status].title
             const StatusIcon = statusList[e.status].Icon
             return (
-              <Item key={key} variant={'outline'}>
+              <Item key={e.id} variant={'outline'}>
                 <ItemContent>
                   <ItemTitle>{e.title}</ItemTitle>
                   <ItemDescription>{e.description}</ItemDescription>

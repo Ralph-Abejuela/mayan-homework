@@ -54,7 +54,7 @@ export default function TaskForm({
   const queryClient = useQueryClient()
   const isEdit = task !== undefined
 
-  const { handleSubmit, control, setError } = useForm<formType>({
+  const { handleSubmit, control, setError, reset } = useForm<formType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: task?.title ?? '',
@@ -74,7 +74,7 @@ export default function TaskForm({
     onSuccess: () => {
       // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
-      console.log('success')
+      reset()
       onOpenChange?.(false)
     },
     onError: (error: ApiError) => {
