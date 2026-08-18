@@ -19,7 +19,8 @@ import {
 } from '../ui/field'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { statusList, type StatusType, type TaskSchema } from './task'
+import { statusList } from './task'
+import type { StatusType, TaskSchema } from './task'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Label } from '../ui/label'
 import { Input } from '../ui/input'
@@ -30,8 +31,8 @@ import {
   createTask as createTaskApi,
   getTaskQuery,
   updateTask,
-  type ApiError,
 } from '#/api/task.api'
+import type { ApiError } from '#/api/task.api'
 import { toast } from 'sonner'
 
 const statusKeys = Object.keys(statusList) as [StatusType, ...StatusType[]]
@@ -67,7 +68,7 @@ export default function TaskForm({
 
   const createTask = useMutation({
     mutationFn: async (e: formType) => {
-      if (isEdit && task) {
+      if (task) {
         await updateTask(task.id, e)
       } else {
         await createTaskApi(e)

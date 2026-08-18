@@ -49,7 +49,7 @@ export class TaskService {
   async findOne(id: number): Promise<TaskEntity> {
     const result = await this.prisma.task.findFirst({ where: { id } });
     if (!result) {
-      throw new NotFoundException(`Task with id of ${result} does not exist`);
+      throw new NotFoundException(`Task with id of ${id} does not exist`);
     }
     return result;
   }
@@ -62,11 +62,14 @@ export class TaskService {
       });
       return result;
     } catch (error) {
-      if (
-        error instanceof PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new NotFoundException(`Task with id of ${id} does not exists.`);
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`Task with id of ${id} does not exists.`);
+        } else if (error.code == 'P2002') {
+          throw new ConflictException(
+            `Task with title of ${updateTaskDto.title} already exists.`,
+          );
+        }
       }
       this.logger.error(error);
       throw new InternalServerErrorException();

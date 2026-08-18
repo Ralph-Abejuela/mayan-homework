@@ -1,10 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  statusCycle,
-  statusList,
-  type StatusType,
-  type TaskSchema,
-} from './task'
+import { statusCycle, statusList } from './task'
+import type { StatusType, TaskSchema } from './task'
 import { useState } from 'react'
 import { useDebounce } from '#/hooks/useDebounce'
 import EmptyTask from './empty-task'
@@ -17,13 +13,16 @@ import {
 } from '../ui/item'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import { IconEdit, IconQuestionMark, IconTrash } from '@tabler/icons-react'
+import { IconEdit, IconTrash } from '@tabler/icons-react'
 import { TaskFilter } from './task-filter'
 import TaskForm from './task-form'
-import { getTaskQuery, updateTask, type ApiError } from '#/api/task.api'
+import { getTaskQuery, updateTask } from '#/api/task.api'
+import type { ApiError } from '#/api/task.api'
 import { toast } from 'sonner'
 import DeleteTaskDialog from './delete-task-dialog'
 import TaskLoadingSkeleton from './loading-task-skeleton'
+
+const pageSize = 3
 
 export default function TaskList() {
   const queryClient = useQueryClient()
@@ -32,6 +31,7 @@ export default function TaskList() {
   const [editTask, setEditTask] = useState<TaskSchema>()
   const [openFormDialog, setOpenFormDialog] = useState<boolean>(false)
   const [deleteTarget, setDeleteTarget] = useState<TaskSchema | null>(null)
+  const [pageIndex, setPageIndex] = useState<number>(0)
 
   const debounceSearch = useDebounce(search, 300)
   const {
@@ -66,6 +66,10 @@ export default function TaskList() {
     },
   })
 
+  const pageMax = Math.floor((data.length - 1) / 3)
+
+  const paginatedData = data.slice(pageSize * pageIndex, pageIndex + pageSize)
+
   const rawData =
     queryClient.getQueryData<TaskSchema[]>(getTaskQuery().queryKey) || []
 
@@ -77,6 +81,14 @@ export default function TaskList() {
   const handleNew = () => {
     setEditTask(undefined)
     setOpenFormDialog(true)
+  }
+
+  const nextPage = () => {
+    setPageIndex((prev) => Math.min(pageMax, prev + 1))
+  }
+
+  const prevPage = () => {
+    setPageIndex((prev) => Math.max(0, prev - 1))
   }
 
   const cycleStatusMutation = useMutation({
@@ -118,37 +130,32 @@ export default function TaskList() {
     return (
       <>
         <EmptyTask callback={handleNew} />
-        <TaskForm
-          key={'new'}
-          open={openFormDialog}
-          onOpenChange={setOpenFormDialog}
-        />
+        {openFormDialog && <TaskForm open onOpenChange={setOpenFormDialog} />}
       </>
     )
   }
 
   return (
-    <div className="grid grid-rows-[auto_1fr] gap-4 h-full">
+    <div className="grid grid-rows-[auto_1fr_auto] gap-4 h-full">
       <div className="flex gap-2">
         <Input
           placeholder="Search..."
           value={search}
           onChange={(e) => {
             setSearch(e.currentTarget.value)
+            setPageIndex(0)
           }}
         />
         <Button onClick={handleNew}>Create</Button>
         <TaskFilter handleFilter={setStatusFilter} />
       </div>
       <div className="flex flex-col gap-2 h-full">
-        {data.length === 0 ? (
+        {paginatedData.length === 0 ? (
           <div>No Tasks found.</div>
         ) : (
-          data.map((e) => {
-            // ponytail: server data may drift from StatusType — guard the lookup
-            const statusMeta = statusList[e.status]
-            const statusTitle = statusMeta?.title ?? 'Unknown Title'
-            const StatusIcon = statusMeta?.Icon ?? IconQuestionMark
+          paginatedData.map((e) => {
+            const statusTitle = statusList[e.status].title
+            const StatusIcon = statusList[e.status].Icon
             return (
               <Item key={e.id} variant={'outline'}>
                 <ItemContent>
@@ -161,7 +168,7 @@ export default function TaskList() {
                     className="mr-4"
                     disabled={
                       cycleStatusMutation.isPending &&
-                      cycleStatusMutation.variables?.id === e.id
+                      cycleStatusMutation.variables.id === e.id
                     }
                     onClick={() => handleCycleStatus(e.id, e.status)}
                   >
@@ -187,6 +194,10 @@ export default function TaskList() {
             )
           })
         )}
+        <div>
+          <Button onClick={prevPage}>Prev</Button>
+          <Button onClick={nextPage}>Next</Button>
+        </div>
       </div>
 
       <DeleteTaskDialog
@@ -196,12 +207,9 @@ export default function TaskList() {
         }}
       />
 
-      <TaskForm
-        key={editTask?.id ?? 'new'}
-        task={editTask}
-        open={openFormDialog}
-        onOpenChange={setOpenFormDialog}
-      />
+      {openFormDialog && (
+        <TaskForm task={editTask} open onOpenChange={setOpenFormDialog} />
+      )}
     </div>
   )
 }

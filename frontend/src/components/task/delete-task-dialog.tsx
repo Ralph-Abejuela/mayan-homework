@@ -12,8 +12,10 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
 } from '../ui/alert-dialog'
-import { deleteTask, getTaskQuery, type ApiError } from '#/api/task.api'
+import { createTask, deleteTask, getTaskQuery } from '#/api/task.api'
+import type { ApiError } from '#/api/task.api'
 import type { TaskSchema } from './task'
+import { useState } from 'react'
 
 export default function DeleteTaskDialog({
   task,
@@ -22,14 +24,41 @@ export default function DeleteTaskDialog({
   task: TaskSchema | null
   onOpenChange: (open: boolean) => void
 }) {
+  const [snapshotTask, setSnapshotTask] = useState<TaskSchema | null>(task)
   const queryClient = useQueryClient()
+
+  const createTaskMutation = useMutation({
+    mutationFn: async (e: TaskSchema) => {
+      await createTask(e)
+    },
+    onSuccess: () => {
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: getTaskQuery().queryKey })
+      toast.success('Task delete undo')
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message)
+    },
+  })
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await deleteTask(id)
+      const taskDetails = await deleteTask(id)
+      return taskDetails
     },
     onSuccess: () => {
-      toast.success('Task deleted')
+      toast.success('Task deleted', {
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            if (snapshotTask === null) {
+              console.warn('No task to undo')
+              return
+            }
+            createTaskMutation.mutate(snapshotTask)
+          },
+        },
+      })
       onOpenChange(false)
     },
     onError: (error: ApiError) => {
@@ -59,7 +88,10 @@ export default function DeleteTaskDialog({
             variant="destructive"
             disabled={deleteMutation.isPending}
             onClick={() => {
-              if (task) deleteMutation.mutate(task.id)
+              if (task) {
+                setSnapshotTask(task)
+                deleteMutation.mutate(task.id)
+              }
             }}
           >
             {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
