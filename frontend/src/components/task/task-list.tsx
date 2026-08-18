@@ -66,10 +66,9 @@ export default function TaskList() {
     },
   })
 
-  const pageMax = Math.floor(data.length / 3)
+  const pageMax = Math.floor((data.length - 1) / 3)
 
   const paginatedData = data.slice(pageSize * pageIndex, pageIndex + pageSize)
-  console.log(paginatedData)
 
   const rawData =
     queryClient.getQueryData<TaskSchema[]>(getTaskQuery().queryKey) || []
