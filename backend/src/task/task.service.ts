@@ -76,12 +76,14 @@ export class TaskService {
     }
   }
 
-  async remove(id: number): Promise<void> {
-    const result = await this.prisma.task.deleteMany({
-      where: { id },
-    });
-    if (result.count === 0) {
-      throw new NotFoundException(`Task with id of ${id} does not exists.`);
+  async remove(id: number): Promise<TaskEntity> {
+    try {
+      const result = await this.prisma.task.delete({
+        where: { id },
+      });
+      return result;
+    } catch (error) {
+      throw new InternalServerErrorException();
     }
   }
 }

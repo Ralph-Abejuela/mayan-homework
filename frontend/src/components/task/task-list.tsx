@@ -22,6 +22,8 @@ import { toast } from 'sonner'
 import DeleteTaskDialog from './delete-task-dialog'
 import TaskLoadingSkeleton from './loading-task-skeleton'
 
+const pageSize = 3
+
 export default function TaskList() {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
@@ -29,6 +31,7 @@ export default function TaskList() {
   const [editTask, setEditTask] = useState<TaskSchema>()
   const [openFormDialog, setOpenFormDialog] = useState<boolean>(false)
   const [deleteTarget, setDeleteTarget] = useState<TaskSchema | null>(null)
+  const [pageIndex, setPageIndex] = useState<number>(0)
 
   const debounceSearch = useDebounce(search, 300)
   const {
@@ -63,6 +66,11 @@ export default function TaskList() {
     },
   })
 
+  const pageMax = Math.floor(data.length / 3)
+
+  const paginatedData = data.slice(pageSize * pageIndex, pageIndex + pageSize)
+  console.log(paginatedData)
+
   const rawData =
     queryClient.getQueryData<TaskSchema[]>(getTaskQuery().queryKey) || []
 
@@ -74,6 +82,14 @@ export default function TaskList() {
   const handleNew = () => {
     setEditTask(undefined)
     setOpenFormDialog(true)
+  }
+
+  const nextPage = () => {
+    setPageIndex((prev) => Math.min(pageMax, prev + 1))
+  }
+
+  const prevPage = () => {
+    setPageIndex((prev) => Math.max(0, prev - 1))
   }
 
   const cycleStatusMutation = useMutation({
@@ -121,23 +137,24 @@ export default function TaskList() {
   }
 
   return (
-    <div className="grid grid-rows-[auto_1fr] gap-4 h-full">
+    <div className="grid grid-rows-[auto_1fr_auto] gap-4 h-full">
       <div className="flex gap-2">
         <Input
           placeholder="Search..."
           value={search}
           onChange={(e) => {
             setSearch(e.currentTarget.value)
+            setPageIndex(0)
           }}
         />
         <Button onClick={handleNew}>Create</Button>
         <TaskFilter handleFilter={setStatusFilter} />
       </div>
       <div className="flex flex-col gap-2 h-full">
-        {data.length === 0 ? (
+        {paginatedData.length === 0 ? (
           <div>No Tasks found.</div>
         ) : (
-          data.map((e) => {
+          paginatedData.map((e) => {
             const statusTitle = statusList[e.status].title
             const StatusIcon = statusList[e.status].Icon
             return (
@@ -178,6 +195,10 @@ export default function TaskList() {
             )
           })
         )}
+        <div>
+          <Button onClick={prevPage}>Prev</Button>
+          <Button onClick={nextPage}>Next</Button>
+        </div>
       </div>
 
       <DeleteTaskDialog

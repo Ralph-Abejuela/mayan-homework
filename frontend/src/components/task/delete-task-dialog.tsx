@@ -12,8 +12,8 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
 } from '../ui/alert-dialog'
-import { deleteTask, getTaskQuery  } from '#/api/task.api'
-import type {ApiError} from '#/api/task.api';
+import { createTask, deleteTask, getTaskQuery } from '#/api/task.api'
+import type { ApiError } from '#/api/task.api'
 import type { TaskSchema } from './task'
 
 export default function DeleteTaskDialog({
@@ -25,12 +25,35 @@ export default function DeleteTaskDialog({
 }) {
   const queryClient = useQueryClient()
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await deleteTask(id)
+  const createTaskMutation = useMutation({
+    mutationFn: async (e: TaskSchema) => {
+      await createTask(e)
     },
     onSuccess: () => {
-      toast.success('Task deleted')
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: getTaskQuery().queryKey })
+      toast.success('Task delete undo')
+    },
+    onError: (error: ApiError) => {
+      toast.error(error.message)
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const taskDetails = await deleteTask(id)
+      return taskDetails
+    },
+    onSuccess: (data, variables, resulsts, context) => {
+      console.log(data, variables, resulsts, context)
+      toast.success('Task deleted', {
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            createTaskMutation.mutate(task)
+          },
+        },
+      })
       onOpenChange(false)
     },
     onError: (error: ApiError) => {
