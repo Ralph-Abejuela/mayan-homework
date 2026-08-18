@@ -15,6 +15,7 @@ import {
 import { createTask, deleteTask, getTaskQuery } from '#/api/task.api'
 import type { ApiError } from '#/api/task.api'
 import type { TaskSchema } from './task'
+import { useState } from 'react'
 
 export default function DeleteTaskDialog({
   task,
@@ -23,6 +24,7 @@ export default function DeleteTaskDialog({
   task: TaskSchema | null
   onOpenChange: (open: boolean) => void
 }) {
+  const [snapshotTask, setSnapshotTask] = useState<TaskSchema | null>(task)
   const queryClient = useQueryClient()
 
   const createTaskMutation = useMutation({
@@ -44,13 +46,16 @@ export default function DeleteTaskDialog({
       const taskDetails = await deleteTask(id)
       return taskDetails
     },
-    onSuccess: (data, variables, resulsts, context) => {
-      console.log(data, variables, resulsts, context)
+    onSuccess: () => {
       toast.success('Task deleted', {
         action: {
           label: 'Undo',
           onClick: () => {
-            createTaskMutation.mutate(task)
+            if (snapshotTask === null) {
+              console.warn('No task to undo')
+              return
+            }
+            createTaskMutation.mutate(snapshotTask)
           },
         },
       })
@@ -83,7 +88,10 @@ export default function DeleteTaskDialog({
             variant="destructive"
             disabled={deleteMutation.isPending}
             onClick={() => {
-              if (task) deleteMutation.mutate(task.id)
+              if (task) {
+                setSnapshotTask(task)
+                deleteMutation.mutate(task.id)
+              }
             }}
           >
             {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
