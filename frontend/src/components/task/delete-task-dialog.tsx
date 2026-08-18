@@ -12,7 +12,8 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
 } from '../ui/alert-dialog'
-import { deleteTask, getTaskQuery, type ApiError } from '#/api/task.api'
+import { deleteTask, getTaskQuery  } from '#/api/task.api'
+import type {ApiError} from '#/api/task.api';
 import type { TaskSchema } from './task'
 
 export default function DeleteTaskDialog({
