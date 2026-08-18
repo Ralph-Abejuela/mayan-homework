@@ -1,10 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  statusCycle,
-  statusList,
-  type StatusType,
-  type TaskSchema,
-} from './task'
+import { statusCycle, statusList } from './task'
+import type { StatusType, TaskSchema } from './task'
 import { useState } from 'react'
 import { useDebounce } from '#/hooks/useDebounce'
 import EmptyTask from './empty-task'
@@ -17,10 +13,11 @@ import {
 } from '../ui/item'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import { IconEdit, IconQuestionMark, IconTrash } from '@tabler/icons-react'
+import { IconEdit, IconTrash } from '@tabler/icons-react'
 import { TaskFilter } from './task-filter'
 import TaskForm from './task-form'
-import { getTaskQuery, updateTask, type ApiError } from '#/api/task.api'
+import { getTaskQuery, updateTask } from '#/api/task.api'
+import type { ApiError } from '#/api/task.api'
 import { toast } from 'sonner'
 import DeleteTaskDialog from './delete-task-dialog'
 import TaskLoadingSkeleton from './loading-task-skeleton'
@@ -118,11 +115,7 @@ export default function TaskList() {
     return (
       <>
         <EmptyTask callback={handleNew} />
-        <TaskForm
-          key={'new'}
-          open={openFormDialog}
-          onOpenChange={setOpenFormDialog}
-        />
+        {openFormDialog && <TaskForm open onOpenChange={setOpenFormDialog} />}
       </>
     )
   }
@@ -145,10 +138,8 @@ export default function TaskList() {
           <div>No Tasks found.</div>
         ) : (
           data.map((e) => {
-            // ponytail: server data may drift from StatusType — guard the lookup
-            const statusMeta = statusList[e.status]
-            const statusTitle = statusMeta?.title ?? 'Unknown Title'
-            const StatusIcon = statusMeta?.Icon ?? IconQuestionMark
+            const statusTitle = statusList[e.status].title
+            const StatusIcon = statusList[e.status].Icon
             return (
               <Item key={e.id} variant={'outline'}>
                 <ItemContent>
@@ -161,7 +152,7 @@ export default function TaskList() {
                     className="mr-4"
                     disabled={
                       cycleStatusMutation.isPending &&
-                      cycleStatusMutation.variables?.id === e.id
+                      cycleStatusMutation.variables.id === e.id
                     }
                     onClick={() => handleCycleStatus(e.id, e.status)}
                   >
@@ -196,12 +187,9 @@ export default function TaskList() {
         }}
       />
 
-      <TaskForm
-        key={editTask?.id ?? 'new'}
-        task={editTask}
-        open={openFormDialog}
-        onOpenChange={setOpenFormDialog}
-      />
+      {openFormDialog && (
+        <TaskForm task={editTask} open onOpenChange={setOpenFormDialog} />
+      )}
     </div>
   )
 }
