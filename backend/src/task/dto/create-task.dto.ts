@@ -1,8 +1,17 @@
+import { Transform } from 'class-transformer';
 import { IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateTaskDto {
   @IsString({ message: 'title must be a string.' })
   @IsNotEmpty({ message: 'title must not be empty.' })
+  @Transform(
+    ({ value }) => (
+      typeof value === 'string' ? value.trim() : value,
+      {
+        toClassOnly: true,
+      }
+    ),
+  )
   readonly title!: string;
   @IsString()
   readonly description?: string;
